@@ -92,5 +92,29 @@ static struct fuse_operations hello_oper = {
 
 int main(int argc, char *argv[])
 {
-	return fuse_main(argc, argv, &hello_oper, NULL);
+	int iMultiThreaded;
+	char* strMountPoint;
+	struct fuse* pFuse;
+	struct fuse_cmd* pCommand;
+
+	// This is the part of fuse_main() before the event loop
+	pFuse = fuse_setup(argc, argv, &hello_oper, sizeof(hello_oper), &strMountPoint, &iMultiThreaded, NULL );
+	if( pFuse == NULL )
+	{
+		printf( "Error: fuse_setup returned NULL!\n" );
+		return 255;
+	}
+
+	// Read a single command.  If none are read, return NULL
+	while( NULL != (pCommand = fuse_read_cmd(pFuse)) )
+	{
+		// Process a single command
+		fuse_process_cmd( pFuse, pCommand );
+	}
+
+	// This is the part of fuse_main() after the event loop
+	fuse_teardown( pFuse, strMountPoint );
+
+	// Return the exited flag, which indicates if fuse_exit() has been called
+	return fuse_exited( pFuse );
 }
